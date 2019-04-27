@@ -52,6 +52,7 @@ namespace Skynet.DotNetClient {
 		{
 			this.sc = sc;
 			this.transporter = new Transporter(socket, this.processMessage);
+			this.transporter.onDisconnect = onDisconnect;
 			this.transporter.start ();
 
 			mRpc = SpRpc.Create (s2c, "package");
@@ -77,6 +78,17 @@ namespace Skynet.DotNetClient {
 			mSendStream.Buffer[0] = (byte)((len >> 8) & 0xff);
 			mSendStream.Buffer[1] = (byte)(len & 0xff);
 			this.transporter.send (mSendStream.Buffer, mSendStream.Length);
+		}
+
+		//The socket disconnect
+		private void onDisconnect()
+		{
+			this.sc.disconnect();
+		}
+
+		internal void close()
+		{
+			transporter.close();
 		}
 	}
 }

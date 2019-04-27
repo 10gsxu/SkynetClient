@@ -49,6 +49,8 @@ namespace Skynet.DotNetClient
 		private ManualResetEvent timeoutEvent = new ManualResetEvent(false);
 		private int timeoutMSec = 8000;    //connect timeout count in millisecond
 
+		private HeartBeatService heartBeatService;
+
 		//不能使用0，使用0默认没有Response
 		private int mSession = 1;
 
@@ -61,8 +63,7 @@ namespace Skynet.DotNetClient
 		/// </summary>
 		/// <param name="host">server name or server ip (www.xxx.com/127.0.0.1/::1/localhost etc.)</param>
 		/// <param name="port">server port</param>
-		/// <param name="callback">socket successfully connected callback(in network thread)</param>
-		public void initClient(string host, int port, Action callback = null)
+		public void initClient(string host, int port)
 		{
 			timeoutEvent.Reset();
 			eventManager = new EventManager();
@@ -104,10 +105,12 @@ namespace Skynet.DotNetClient
 						this.protocol = new Protocol(this, this.socket);
 						NetWorkChanged(NetWorkState.CONNECTED);
 
-						if (callback != null)
-						{
-							callback();
-						}
+						this.request ("handshake", (SpObject obj) => {
+							Debug.Log(obj["msg"].AsString());
+							//开始心跳，检测网络断开
+							heartBeatService = new HeartBeatService(5, this);
+							heartBeatService.start();
+						});
 					}
 					catch (SocketException e)
 					{
@@ -207,6 +210,19 @@ namespace Skynet.DotNetClient
 			if (disposing)
 			{
 				// free managed resources
+				if (this.protocol != null)
+				{
+					this.protocol.close();
+				}
+
+				if (heartBeatService != null) {
+					heartBeatService.stop ();
+				}
+
+				if (this.eventManager != null)
+				{
+					this.eventManager.Dispose();
+				}
 
 				try
 				{

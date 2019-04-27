@@ -10,19 +10,7 @@ public class TestSkynet : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		skynetClient = new SkynetClient ();
-		skynetClient.initClient ("127.0.0.1", 8888, () => {
-			print("TestSkynet");
-			sendMsg();
-		});
-		skynetClient.on("heartbeat", (SpObject obj) => {
-			print("heartbeat");
-		});
-	}
-
-	void sendMsg() {
-		skynetClient.request ("handshake", (SpObject obj) => {
-			print(obj["msg"].AsString());
-		});
+		skynetClient.initClient ("127.0.0.1", 8888);
 	}
 	
 	// Update is called once per frame
